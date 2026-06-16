@@ -1,0 +1,480 @@
+{
+  "name": "Email Job Classifier",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -864,
+        432
+      ],
+      "id": "afebf7c4-ddb3-44e7-a01e-aa9b5dccab46",
+      "name": "Gmail Trigger"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-4o-mini",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -704,
+        640
+      ],
+      "id": "b1053537-f3b4-453e-b5ad-8513972af128",
+      "name": "OpenRouter Chat Model"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🚨 New Job Update!  \n📬 Status: {{ $('AI Email Classifier').item.json.output.category }} \n📧 Subject: {{ $('Gmail Trigger').item.json.subject }}  \nCheck your inbox for details.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        416,
+        192
+      ],
+      "id": "85103593-4e59-4a47-bc62-9760e6eccb41",
+      "name": "Discord Alert",
+      "webhookId": "c6c274ad-51cc-4d19-9989-26de9386829f"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the following email subject and body carefully. Classify it into exactly ONE of these six categories based on the strict rules below:\n\n1. 'Applications' -> ONLY use this if the email is a successful confirmation that a job application has been submitted (e.g., \"Thank you for applying\", \"Application received\", \"Your application to...\"). \n2. 'Interviews' -> Use this for invitations to interview, phone screens, coding challenges, test assignments, or scheduling requests.\n3. 'Rejections' -> Use this if the company states they are not moving forward with the application, even if the language is polite (e.g., \"we have decided to pursue other candidates\", \"not moving forward at this time\", \"unfortunately\", \"thank you for your time but\").\n4. 'Offers' -> Use this if the email contains an official job offer or next steps to discuss an offer.\n5. 'Recommendations' -> Use this for automated alerts, digests, and job matches sent from platforms like LinkedIn, Indeed, Glassdoor, or automated job boards.\n6. 'Other' -> Use this if the email does not fit any of the professional categories above.\n\nProvide ONLY the final classification name as a single text output matching the exact casing above.\n\nEmail Subject: {{ $json.subject }}\nEmail Body: {{ $json.text }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -672,
+        432
+      ],
+      "id": "9751b582-25c4-4b47-80a1-93a7b6a435cd",
+      "name": "AI Email Classifier"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "Applications",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5ca0e703-d4cb-404c-afca-aee3e31715ba"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "28f590ca-c517-48fc-9085-a0d3588cf6d3",
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "Interviews",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "6ec555ce-bcea-43fc-ba02-41909df186e7",
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "Offers",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9379435d-753f-406b-b7b2-90f439bdd3ff",
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "Rejections",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9146761b-4978-4b54-97b8-55290ab66800",
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "Recommendations",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f5abf526-78c1-4d01-a50c-db9c625cc019",
+                    "leftValue": "={{ $json.output.category }}",
+                    "rightValue": "Other",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -320,
+        384
+      ],
+      "id": "1baae977-7801-47e3-b372-8b8c46d43d8f",
+      "name": "Route by Category"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_2593895679308815912"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "01231b07-bc3e-4d60-a21a-e657c42ebdf1",
+      "name": "Label: Applications",
+      "webhookId": "37017160-bb2e-4aaa-a788-9c5ea3ecf94b"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_2789255360683845340"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        160
+      ],
+      "id": "a3e1f18a-6222-420c-af79-0b8254e2ea16",
+      "name": "Label: Interviews",
+      "webhookId": "37017160-bb2e-4aaa-a788-9c5ea3ecf94b"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_4796098818212346950"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        320
+      ],
+      "id": "1180fc41-f9df-43e9-aa26-bd54a4760b6c",
+      "name": "Label: Offers",
+      "webhookId": "37017160-bb2e-4aaa-a788-9c5ea3ecf94b"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_3902621650316008205"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        464
+      ],
+      "id": "fb0e3937-ddda-4c84-b107-9e1e4f92c1e9",
+      "name": "Label: Rejections",
+      "webhookId": "37017160-bb2e-4aaa-a788-9c5ea3ecf94b"
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Gmail Trigger').item.json.id }}",
+        "labelIds": [
+          "Label_597900356362670334"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        624
+      ],
+      "id": "cdcd74f1-f878-4c71-9060-da540732ba0a",
+      "name": "Label: Recommendations",
+      "webhookId": "1f10b324-c147-4a98-8c56-b9b8a0cc8447"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        0,
+        816
+      ],
+      "id": "b6f22498-8cfd-4ee0-b0ea-24b9e7316eea",
+      "name": "Ignore: Other"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"category\": \"Interviews\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        640
+      ],
+      "id": "1111837f-2f36-49a7-a050-287f76b441a3",
+      "name": "Structured Output Parser"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Email Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Email Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Email Classifier": {
+      "main": [
+        [
+          {
+            "node": "Route by Category",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Category": {
+      "main": [
+        [
+          {
+            "node": "Label: Applications",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Label: Interviews",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Label: Offers",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Label: Rejections",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Label: Recommendations",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Ignore: Other",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label: Interviews": {
+      "main": [
+        [
+          {
+            "node": "Discord Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label: Offers": {
+      "main": [
+        [
+          {
+            "node": "Discord Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label: Rejections": {
+      "main": [
+        [
+          {
+            "node": "Discord Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Email Classifier",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9acc9939-fef3-4ca3-95b6-0f7f5e3facdb",
+  "meta": {
+    "instanceId": "f82e8f26f2415e5c828eb0418d42fadb5f402a86a90ee450a591858c0b1ef67e"
+  },
+  "nodeGroups": [],
+  "id": "jy7ZNuO7ahQ04yrW",
+  "tags": []
+}

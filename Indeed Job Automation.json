@@ -1,0 +1,999 @@
+{
+  "name": "Indeed Job Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "maxItems": 10
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -2304,
+        352
+      ],
+      "id": "84c52d2f-31a0-4284-b38c-a7a82f660f32",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 8
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -3040,
+        256
+      ],
+      "id": "a144c7ad-1e18-4e63-a5ee-d2a179ae37c8",
+      "name": "Daily Check Trigger"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -3040,
+        464
+      ],
+      "id": "283c07f3-9d77-48ca-b406-cf68960989ec",
+      "name": "Manual Test Trigger"
+    },
+    {
+      "parameters": {
+        "actorId": {
+          "__rl": true,
+          "value": "MXLpngmVpE8WTESQr",
+          "mode": "list",
+          "cachedResultName": "🚀 Indeed jobs scraper [PPR] (borderline/indeed-scraper)",
+          "cachedResultUrl": "https://console.apify.com/actors/MXLpngmVpE8WTESQr/input"
+        },
+        "customBody": "={\n    \"country\": \"ma\",\n    \"enableUniqueJobs\": false,\n    \"includeSimilarJobs\": false,\n    \"location\": \"Casablanca\",\n    \"maxRows\": 10,\n    \"query\": \"\\\"Data Analyst\\\" OR \\\"Business Intelligence Analyst\\\"\"\n}",
+        "timeout": {},
+        "memory": 128,
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        -2720,
+        352
+      ],
+      "id": "cde4c6ba-6f93-4384-9e46-b73097604df1",
+      "name": "Launch Indeed Scraper",
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "KiYvWdqG50g1FKzH",
+          "name": "Apify OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Datasets",
+        "datasetId": "={{ $json.defaultDatasetId }}",
+        "offset": {},
+        "options": {},
+        "authentication": "apifyOAuth2Api"
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        -2512,
+        352
+      ],
+      "id": "53ca8e73-2b54-4f51-8edd-f3a866eba3b7",
+      "name": "Extract Scraped Jobs",
+      "credentials": {
+        "apifyOAuth2Api": {
+          "id": "KiYvWdqG50g1FKzH",
+          "name": "Apify OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0b9339e4-7eb4-4bde-92d6-f4c8d2d3257b",
+              "leftValue": "={{ JSON.parse($('Generate a Score and Reasoning').item.json.output[0].content[0].text).score }}",
+              "rightValue": 5,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1744,
+        352
+      ],
+      "id": "ffe30fbf-aa37-40ca-ac9b-762ec6205f52",
+      "name": "Filter by Score"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/1k4nSv9rp3nX7MgIx-RbXm5-7Nkmt6Ja-lweEVktSSh0/edit?usp=drivesdk",
+          "__regex": "https:\\/\\/(?:drive|docs)\\.google\\.com(?:\\/.*|)\\/d\\/([0-9a-zA-Z\\-_]+)(?:\\/.*|)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k4nSv9rp3nX7MgIx-RbXm5-7Nkmt6Ja-lweEVktSSh0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Link": "={{ $('Extract Scraped Jobs').first().json.jobUrl }}",
+            "Title": "={{ $('Extract Scraped Jobs').first().json.title }}",
+            "Job Description": "={{ $('Extract Scraped Jobs').first().json.descriptionText }}",
+            "Company Name": "={{ $('Extract Scraped Jobs').first().json.companyName }}",
+            "Platform": "Indeed",
+            "Date": "={{ $('Extract Scraped Jobs').first().json.datePublished }}",
+            "Rating": "={{ $('Extract Scraped Jobs').first().json.rating.rating }}",
+            "Salary": "={{ $('Extract Scraped Jobs').first().json.salary }}",
+            "Cover Letter": "=https://docs.google.com/document/d/{{ $('Copy Cover Letter Template').item.json.id }}/edit",
+            "Expired": "={{ $('Extract Scraped Jobs').first().json.expired }}",
+            "Remote": "={{ $('Extract Scraped Jobs').first().json.isRemote }}",
+            "Status": "To-Do",
+            "Score": "={{ JSON.parse($('Generate a Score and Reasoning').first().json.output[0].content[0].text).score }}",
+            "Reasoning": "={{ JSON.parse($('Generate a Score and Reasoning').first().json.output[0].content[0].text).reasoning }}",
+            "Location": "={{ $('Extract Scraped Jobs').first().json.location.city }}"
+          },
+          "matchingColumns": [
+            "Link"
+          ],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rating",
+              "displayName": "Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Cover Letter",
+              "displayName": "Cover Letter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Expired",
+              "displayName": "Expired",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Remote",
+              "displayName": "Remote",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reasoning",
+              "displayName": "Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        320,
+        0
+      ],
+      "id": "67dbeda9-8a39-4e2c-8afa-2bc2dacfd58f",
+      "name": "Log Application + Cover Letter",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "X7ZyzNfjz1GOhqAs",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are an AI assistant specialized in screening job descriptions to prioritize Data Analyst applications. Evaluate the job posting against the criteria below, calculate a score out of 10, and return the result in JSON format.\n\n### Scoring Criteria (Max 10 Points)\n\n1. Location (Max 1 Point)\n*   Casablanca = +1\n*   Rabat = +0.5\n*   Any other location = +0\n\n2. Work Mode (Max 2 Points)\n*   Hybrid / On-site = +2\n*   Fully Remote = +1.5\n\n3. Employment Type (Max 1 Point)\n*   Full-time = +1\n*   Part-time / Contract = +0.5\n\n4. Role Match (Max 2 Points)\n*   Data Analyst / BI Analyst = +2\n*   Business Analyst (Data-focused) / Reporting Analyst = +1.5\n*   Data Scientist / Data Operations = +1\n*   Data Engineer = +0.5\n\n5. Experience Requirement (Max 2 Points)\n*   Entry-level / Junior / Fresh Graduate (0–2 years) = +2\n*   Mid-level (Up to 3 years) = +1\n*   Senior (3+ years) = +0\n\n6. Skills Match (Max 2 Points)\nCompare the job requirements against Ahmad Mansoor's skills: \n[Tableau, Looker Studio, Qlik, R Programming, BigQuery, Snowflake, SQL Server, Oracle DB, ETL, Data Pipelines, Predictive Modeling, A/B Testing]\n*   Strong Match (+2): Requires 4+ of these keywords AND focuses heavily on Analytics/BI.\n*   Moderate Match (+1): Requires 2–3 of these keywords.\n*   Weak Match (+0): Fewer than 2 matches.\n\n7. Core Tech Bonus (+0.5 Points)\n*   Add +0.5 if the job description explicitly mentions: Tableau, Snowflake, BigQuery, SQL, or R.\n\n*Note: Total capped at 10.0 max.*\n\n### Output Schema\nMap the final score to one of these actions:\n*   9.0 – 10.0: \"Apply immediately\"\n*   7.0 – 8.5: \"Strong candidate, apply\"\n*   5.0 – 6.5: \"Apply if time permits\"\n*   Below 5.0: \"Low priority\"\n\n\nOutput Format Constraint:\n\nYou must return ONLY a raw JSON object matching the schema below.\n\nDo NOT wrap the response in markdown code blocks (e.g., do not use ```json).\n\nDo NOT include conversational text, explanation, or comments outside the JSON object.\n\n\n{\n  \"score\": 10,\n  \"reasoning\": \"Overall Score: X/10\\n\\nBreakdown:\\n- Location: X\\n- Work Mode: X\\n- Employment Type: X\\n- Role Match: X\\n- Experience Requirement: X\\n- Skills Match: X\\n\\nRecommendation: [Insert recommendation text based on score]\"\n}\n"
+            },
+            {
+              "content": "=Here's the job listing details:\nSalary: {{ $('Extract Scraped Jobs').item.json.salary.salaryText }}\nRemote: {{ $('Extract Scraped Jobs').item.json.isRemote }}\nLocation: {{ $('Extract Scraped Jobs').item.json.location }}\nPosition Type: {{ $('Extract Scraped Jobs').item.json.positionType }} (i.e. job or internship)\nBenefits: {{ $('Extract Scraped Jobs').item.json.benefits }}\nJob type/term: {{ $json.jobType[0] }} (i.e. part time, full time, contract etc)\n{{ $json.descriptionText }}\nHere is the candidates skill set:\n\n📄 SAMPLE RESUME\n\nAHMAD MANSOOR\n\n📍 Casablanca, Morocco | ahmad.mansoor.dev@fictionalmail.ma | +212 6 00-123456 | [github.com/ahmad-mansoor-test](https://www.google.com/search?q=https%3A%2F%2Fgithub.com%2Fahmad-mansoor-test)\n\n---\n\n## 🛠️ Technical Skill Set\n\n* **BI & Analytics Platforms:** Tableau Desktop, Looker Studio, Qlik Sense, Google Analytics 4.\n* **Cloud Data Warehousing:** Google BigQuery, Snowflake, Amazon Redshift.\n* **Data Pipelines & Scripting:** R Programming (tidyverse, ggplot2), Scala, Apache Bash scripting.\n* **Database Management:** Oracle DB, Microsoft SQL Server, MongoDB (NoSQL), ETL pipeline development.\n* **Methodologies:** Predictive Modeling, A/B Testing, Cohort Analysis, Financial Forecasting.\n\n---\n\n## 💼 Professional Experience & Data Projects\n\n### **Atlas Logistics Solutions** | Casablanca, Morocco\n\n**Junior Data Operations Analyst** | *January 2025 – Present*\n\n* Architected an automated ETL data pipeline using Google BigQuery to centralize supply chain metrics across 4 North African regional hubs.\n* Designed enterprise-level Tableau dashboards tracking Fleet Optimization KPIs, leading to a fictional 14% reduction in fuel routing overhead.\n* Utilized R scripting to clean, parse, and analyze 120k+ rows of daily transit logs, eliminating structural redundancies.\n\n### **Global FinTech Analytics Case Study** | R | Tableau | BigQuery | Predictive Modeling\n\n* Built a robust financial risk assessment dashboard processing simulated transactional ledger datasets.\n* Implemented predictive cohort analysis models in R to identify churn vulnerabilities and customer lifetime value (LTV) anomalies.\n* Presented interactive data stories to mock stakeholders, translating complex algorithmic variance into high-level business strategy.\n\n### **E-Commerce Market Basket Optimization** | Snowflake | SQL Server | Looker Studio\n\n* Designed a relational database schema in Microsoft SQL Server to manage mock multi-vendor retail data.\n* Wrote advanced SQL window functions, common table expressions (CTEs), and recursive queries to segment user purchasing patterns.\n* Visualized product affinity groupings in Looker Studio to assist hypothetical merchandising teams with cross-selling strategies.\n\n---\n\n## 🎓 Education\n\n**Master of Science in Business Intelligence & Big Data Analytics**\nHassan II University of Casablanca\n*Graduated: July 2024*\n\n---\n\n## 📜 Professional Certifications\n\n* **Google Advanced Data Analytics Professional Certificate** | *Issued: November 2025*\n* **Snowflake Core Certified Data Analyst** | *Issued: August 2025*\n* **Tableau Certified Data Analyst** | *Issued: May 2025*\n* **Certified Associate in Project Management (CAPM) – PMI** | *Issued: February 2025*"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        -2096,
+        352
+      ],
+      "id": "de0d7b02-6782-4620-b11f-a80839216f4b",
+      "name": "Generate a Score and Reasoning",
+      "credentials": {
+        "openAiApi": {
+          "id": "xhbj1zkLedFIQq1G",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "https://docs.google.com/document/d/1yGERMS2xeQXR-3lkUU538XbN9BiTMdLDGN4BC0Qqzhk/edit?usp=drive_link"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        -768,
+        0
+      ],
+      "id": "d93626f0-ac22-4267-82dc-65f47666cf05",
+      "name": "Get Resume",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "dW8ftFEHx8E4hfIQ",
+          "name": "Google Docs OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "39334853-6da1-4479-9279-558014988bd0",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1056,
+        16
+      ],
+      "id": "471491ba-067e-452c-b968-8487a93b247a",
+      "name": "Does File Need Creation?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentURL": "={{ $json.id }}",
+        "actionsUi": {
+          "actionFields": [
+            {
+              "action": "replaceAll",
+              "text": "{company_name}",
+              "replaceText": "={{ $('Draft Cover Letter Content').item.json.output.company_name }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "{company_address}",
+              "replaceText": "={{ $('Draft Cover Letter Content').item.json.output.company_address }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "{job_title}",
+              "replaceText": "={{ $('Draft Cover Letter Content').item.json.output.job_title }}"
+            },
+            {
+              "action": "replaceAll",
+              "text": "{cover_letter}",
+              "replaceText": "={{ $('Draft Cover Letter Content').item.json.output.cover_letter }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        96,
+        0
+      ],
+      "id": "f5022819-4351-44e4-9aac-03ef9e8a8201",
+      "name": "Insert AI Content into Document",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "dW8ftFEHx8E4hfIQ",
+          "name": "Google Docs OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -832,
+        304
+      ],
+      "id": "63f8a6ef-0bbe-4bda-942b-e56d28e3dda5",
+      "name": "Skip - Already Processed"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "=name = 'Cover letter_{{ $('Extract Scraped Jobs').item.json.title }}_{{ $('Extract Scraped Jobs').item.json.companyName }}' and trashed = false",
+        "limit": 1,
+        "filter": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1264,
+        16
+      ],
+      "id": "a304c059-2ea0-4aed-9849-d7fe51e10df3",
+      "name": "Check Drive for Duplicates",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "7w02dp7zlUcMf0Dg",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const jobTitle = item.json.title || undefined ;\n  const companyName = item.json.companyName || undefined;\n  \n  return {\n    json: {\n      ...item.json, \n      target_filename: `Cover letter_${jobTitle}_${companyName}`\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1472,
+        16
+      ],
+      "id": "69619612-48a6-40ad-b375-3790e44a5070",
+      "name": "Prepare Target Filename"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -528,
+        192
+      ],
+      "id": "948127d7-9a68-4731-8146-31ddc919973e",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "xhbj1zkLedFIQq1G",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"company_name\": \"Company Name\",\n  \"company_address\": \"Company Address\",\n  \"job_title\": \"Role Title\",\n  \"cover_letter\": \"Dear Hiring Manager, ...\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -320,
+        192
+      ],
+      "id": "c779b1d5-6d7a-4c28-88ee-8fa895c01c8b",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "copy",
+        "fileId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "165e0fKFhgE_YoemRk7gHi33wzliCTMR8FHBhRfT_Bic"
+        },
+        "name": "=Cover letter_{{ $('Extract Scraped Jobs').first().json.title }}_{{ $('Extract Scraped Jobs').first().json.companyName }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -128,
+        0
+      ],
+      "id": "3cf7c270-d71f-42c9-a1f2-2f0a7c113b0b",
+      "name": "Copy Cover Letter Template",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "7w02dp7zlUcMf0Dg",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert career consultant and professional copywriter specializing in high-impact job applications. Your task is to write a highly customized, compelling cover letter body based strictly on the provided Candidate Resume, Target Job Listing, and the specialized Cover Letter Writing Framework outlined below.\n\nCover Letter Writing Framework\n\n1. Core Philosophy\nThe Ultimate Goal: Do not summarize the resume. Instead, position the applicant as a forward-thinking problem solver who deeply understands the company’s specific industry challenges.\n\nKey Traits: The letter must be highly personalized, concise (ideally under 250 words, maximum 1 page), metrics-driven, and white-space friendly.\n\n2. Structural Requirements\nOpening Hook (The Most Important Section — 50% of effort):\n\nDO NOT start with generic filler like \"My name is...\", \"I am writing to apply for...\", or basic enthusiasm.\n\nDO open immediately with a unique observation, industry insight, product/user perspective, or mission alignment that shows deep research into the target company.\n\nStrategic Body Paragraph:\n\nDO NOT list general responsibilities or copy resume bullet points.\n\nDO highlight 1–2 specific experiences using the Achievement Writing Formula: Action + Context + Measurable Result (e.g., “By restructuring X, I achieved a [Metric] boost, exceeding the benchmark by [Metric].”). Prove tangible problem-solving skills matching the top 3 requirements of the role.\n\nIntentional Closing:\n\nReinforce enthusiasm for solving the company's core pain points, summarize the forward-looking value add, and end confidently with a polite thank you.\n\n3. Tone, Language, & Hygiene\nTone: Curious, motivated, professionally confident, and objective. Avoid forced humor, oversharing, or excessive self-praise.\n\nLanguage: Use strong action verbs and quantifiable impact metrics. Avoid corporate buzzwords, unexplained acronyms, or generic filler text.\n\nStrict Filter: If the final letter could easily be sent to a competitor company by changing just the company name, it has failed. Rewrite it to be hyper-specific.\n\nExecution Steps for the AI\nAnalyze the Job Listing: Extract the company name, primary core challenge/pain point implied by the description, top 3 required technical skills, and repeated keywords.\n\nMatch with Resume Data: Select the top 1 or 2 measurable achievements from the candidate's resume that directly demonstrate a past solution to that exact company pain point.\n\nDraft the Body Only: Generate only the letter text starting directly from the opening hook paragraph through the final sign-off line. Do not generate headers, dates, or contact info blocks.\n\nInputs\n\nTarget Job Listing\nCompany Name: {{ $('Extract Scraped Jobs').first().json.companyName }}\n\nJob Title: {{ $('Extract Scraped Jobs').first().json.title }}\n\nLocation: {{ $('Extract Scraped Jobs').first().json.location }}\n\nJob Description: {{ $('Extract Scraped Jobs').first().json.descriptionText }}\n\nCandidate Resume Data:\n\n{{ $json.content }}\n\nOutput Directive\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -496,
+        0
+      ],
+      "id": "141b6b9f-d6a2-434e-a6aa-1d3e366f9ac5",
+      "name": "Draft Cover Letter Content"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "url",
+          "value": "https://docs.google.com/spreadsheets/d/1k4nSv9rp3nX7MgIx-RbXm5-7Nkmt6Ja-lweEVktSSh0/edit?usp=drivesdk",
+          "__regex": "https:\\/\\/(?:drive|docs)\\.google\\.com(?:\\/.*|)\\/d\\/([0-9a-zA-Z\\-_]+)(?:\\/.*|)"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1k4nSv9rp3nX7MgIx-RbXm5-7Nkmt6Ja-lweEVktSSh0/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Link": "={{ $('Extract Scraped Jobs').item.json.jobUrl }}",
+            "Title": "={{ $('Extract Scraped Jobs').item.json.title }}",
+            "Job Description": "={{ $('Extract Scraped Jobs').item.json.descriptionText }}",
+            "Company Name": "={{ $('Extract Scraped Jobs').item.json.companyName }}",
+            "Platform": "Indeed",
+            "Date": "={{ $('Extract Scraped Jobs').item.json.datePublished }}",
+            "Rating": "={{ $('Extract Scraped Jobs').item.json.rating.rating }}",
+            "Salary": "={{ $('Extract Scraped Jobs').item.json.salary }}",
+            "Cover Letter": "=Not Applicable",
+            "Expired": "={{ $('Extract Scraped Jobs').item.json.expired }}",
+            "Remote": "={{ $('Extract Scraped Jobs').item.json.isRemote }}",
+            "Status": "To-Do",
+            "Score": "={{ JSON.parse($('Generate a Score and Reasoning').item.json.output[0].content[0].text).score }}",
+            "Reasoning": "={{ JSON.parse($('Generate a Score and Reasoning').item.json.output[0].content[0].text).reasoning }}",
+            "Location": "={{ $('Extract Scraped Jobs').item.json.location.city }}"
+          },
+          "matchingColumns": [
+            "Link"
+          ],
+          "schema": [
+            {
+              "id": "Title",
+              "displayName": "Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company Name",
+              "displayName": "Company Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Link",
+              "displayName": "Link",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Rating",
+              "displayName": "Rating",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Cover Letter",
+              "displayName": "Cover Letter",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Expired",
+              "displayName": "Expired",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Remote",
+              "displayName": "Remote",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reasoning",
+              "displayName": "Reasoning",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1408,
+        656
+      ],
+      "id": "a318dd85-dd1a-44ce-848c-4f573bf09e46",
+      "name": "Log Application",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "X7ZyzNfjz1GOhqAs",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Generate a Score and Reasoning",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Check Trigger": {
+      "main": [
+        [
+          {
+            "node": "Launch Indeed Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test Trigger": {
+      "main": [
+        [
+          {
+            "node": "Launch Indeed Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Launch Indeed Scraper": {
+      "main": [
+        [
+          {
+            "node": "Extract Scraped Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Scraped Jobs": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter by Score": {
+      "main": [
+        [
+          {
+            "node": "Prepare Target Filename",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Application",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate a Score and Reasoning": {
+      "main": [
+        [
+          {
+            "node": "Filter by Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Resume": {
+      "main": [
+        [
+          {
+            "node": "Draft Cover Letter Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Does File Need Creation?": {
+      "main": [
+        [
+          {
+            "node": "Get Resume",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip - Already Processed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert AI Content into Document": {
+      "main": [
+        [
+          {
+            "node": "Log Application + Cover Letter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Drive for Duplicates": {
+      "main": [
+        [
+          {
+            "node": "Does File Need Creation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Target Filename": {
+      "main": [
+        [
+          {
+            "node": "Check Drive for Duplicates",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Draft Cover Letter Content",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Draft Cover Letter Content",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Draft Cover Letter Content": {
+      "main": [
+        [
+          {
+            "node": "Copy Cover Letter Template",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Copy Cover Letter Template": {
+      "main": [
+        [
+          {
+            "node": "Insert AI Content into Document",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9510d58f-6dc9-4429-a7e7-2885fb8fce0b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f82e8f26f2415e5c828eb0418d42fadb5f402a86a90ee450a591858c0b1ef67e"
+  },
+  "nodeGroups": [],
+  "id": "uTSS0iWJY4dVYFoG",
+  "tags": []
+}
