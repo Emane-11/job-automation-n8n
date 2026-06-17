@@ -1,4 +1,4 @@
-# AI Gmail Classifier Setup Guide
+# Email Job Classifier Setup Guide
 
 This workflow automatically categorizes incoming emails using an OpenRouter LLM, applies native Gmail labels, and sends instant alerts to Discord for high-priority career updates.
 
@@ -48,7 +48,7 @@ This block consists of three connected nodes working as a single engine:
 
 - **Main Node**: Set your system prompt to analyze the email body and assign a category ID.
 
-- **OpenRouter Chat Model**: Select a fast model like gpt-4o-mini, or budget-friendly model like `meta-llama/llama-3-8b-instruct` or `google/gemini-flash`.
+- **OpenRouter Chat Model**: Select a fast model like `gpt-4o-mini`, or budget-friendly model like `meta-llama/llama-3-8b-instruct` or `google/gemini-flash`.
 
 - **Structured Output Parser**: Enforce a strict JSON schema so the AI only returns a single category.
 
