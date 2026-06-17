@@ -6,7 +6,7 @@ This workflow automatically categorizes incoming emails using an OpenRouter LLM,
 
 <br>
 
-![alt text](<Screenshot 2026-06-15 at 22.00.10.png>)
+![alt text](<assets/Screenshot 2026-06-15 at 22.00.10.png>)
 
 <br>
 
